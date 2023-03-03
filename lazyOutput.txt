@@ -1,7 +1,7 @@
-File: text.txt
-Parse Runtime: 0.0421 seconds
-Analyze Runtime: 0.0042 seconds
-Total Runtime: 0.0463 seconds
+File: lazyOutput.txt
+Parse Runtime: 0.0351 seconds
+Analyze Runtime: 0.0015 seconds
+Total Runtime: 0.0366 seconds
 
 Word Count: 9163
 Unique words: 1837
@@ -428,11 +428,11 @@ careful 3
 problem 3
 liotta 3
 better 3
+matter 3
 moment 3
 having 3
 fellow 3
 choice 3
-matter 3
 afraid 3
 wonder 3
 during 3
@@ -1079,8 +1079,8 @@ controls 1
 official 1
 dreaming 1
 helpless 1
-cheering 1
 sleeping 1
+cheering 1
 father's 1
 scariest 1
 restroom 1
@@ -1193,6 +1193,7 @@ exactly 1
 witness 1
 pulling 1
 stripes 1
+stripey 1
 benefit 1
 pointed 1
 funeral 1
@@ -1207,7 +1208,6 @@ removal 1
 formula 1
 forever 1
 dressed 1
-stripey 1
 culture 1
 covered 1
 colored 1
@@ -1410,8 +1410,8 @@ sumner 1
 insect 1
 runway 1
 name's 1
-harder 1
 saying 1
+harder 1
 korean 1
 martin 1
 queens 1
