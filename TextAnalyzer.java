@@ -23,11 +23,12 @@ import java.util.List;
 
 class TextAnalyzer {
 
+    // prints out all words if true
     public static final boolean DEBUG = true;
-    private static final int NUM_THREADS = 8;
 
-    // TODO Switch from using fileName to args[x] at some point?
-    private static final String inputFile = "text.txt";
+    // TODO maybe switch from using inputFile and NUM_THREADS to args[x] at some point?
+    public static final String inputFile = "text.txt";
+    private static final int NUM_THREADS = 8;
 
     private static float PARSE_TIME;
     private static float ANALYZE_TIME;

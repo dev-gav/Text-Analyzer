@@ -17,8 +17,6 @@ import utility.WordData;
 
 public class LazyTextAnalyzer {
 
-    private static final String fileName = "lazyOutput.txt";
-
     private static float PARSE_TIME;
     private static float ANALYZE_TIME;
 
@@ -116,13 +114,13 @@ public class LazyTextAnalyzer {
 
     public static void lazyOutput(WordData data) throws IOException {
 
-        File out = new File(fileName);
+        File out = new File("lazyOutput.txt");
         if(!out.exists())
             out.createNewFile();
 
         PrintWriter pw = new PrintWriter(out);
 
-        pw.printf("File: %s\n", fileName);
+        pw.printf("File: %s\n", TextAnalyzer.inputFile);
         pw.printf("Parse Runtime: %.4f seconds\n", PARSE_TIME);
         pw.printf("Analyze Runtime: %.4f seconds\n", ANALYZE_TIME);
         pw.printf("Total Runtime: %.4f seconds\n", (PARSE_TIME + ANALYZE_TIME));

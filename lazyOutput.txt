@@ -1,7 +1,7 @@
-File: lazyOutput.txt
-Parse Runtime: 0.0351 seconds
-Analyze Runtime: 0.0015 seconds
-Total Runtime: 0.0366 seconds
+File: text.txt
+Parse Runtime: 0.0252 seconds
+Analyze Runtime: 0.0009 seconds
+Total Runtime: 0.0261 seconds
 
 Word Count: 9163
 Unique words: 1837
