@@ -40,7 +40,6 @@ class TextAnalyzer {
         Scanner input = new Scanner(file); 
         List<String> text = new ArrayList<String>();
 
-        // May need to move this behavior to the ParserThreads
         while (input.hasNext())
             text.add(input.next());
         input.close();
