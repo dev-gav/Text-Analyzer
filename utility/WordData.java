@@ -16,18 +16,32 @@ import java.util.List;
 
 public class WordData {
 
-    private static final int ARRAY_SIZE = 10;
+    // private static final int ARRAY_SIZE = 10;
 
-    private int totalWordCount;
-    private int onlyWordCount;
-    private List<Word> words;
-    private List<Word> mostCommonWords; 
+    // private int totalWordCount;
+    // private int onlyWordCount;
+    // private List<Word> words;
+    // private List<Word> mostCommonWords;
+
+    public static final int ARRAY_SIZE = 10;
+
+    public int totalWordCount;
+    public int onlyWordCount;
+    public List<Word> words;
+    public List<Word> mostCommonWords; 
     
     public WordData() {
         this.totalWordCount = 0;
         this.onlyWordCount = 0;
         this.words = new ArrayList<Word>();
         this.mostCommonWords = new ArrayList<Word>();
+    }
+
+    public WordData(int totalWordCount, int onlyWordCount, List<Word> words, List<Word> mostCommonWords) {
+        this.totalWordCount = totalWordCount;
+        this.onlyWordCount = onlyWordCount;
+        this.words = words;
+        this.mostCommonWords = mostCommonWords;
     }
 
     public synchronized void addToTotalCount(int amount) {
