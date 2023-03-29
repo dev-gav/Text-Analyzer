@@ -23,6 +23,9 @@ import java.util.List;
 
 class TextAnalyzer {
 
+    // Stops threads
+    public static boolean endProgram = false;
+
     // prints out all words if true
     public static final boolean DEBUG = true;
 
@@ -71,7 +74,7 @@ class TextAnalyzer {
         ConcurrentHashMap<String, AtomicInteger> wordCounts = new ConcurrentHashMap<String, AtomicInteger>(16, 0.75f, NUM_THREADS);
         
         for(int i = 0; i < NUM_THREADS; i++)
-            parsers[i] = new ParserThread(parserCounter, words, wordCounts);
+            parsers[i] = new ParserThread(i, parserCounter, words, wordCounts);
 
         // Start timer 
         long startTime = System.nanoTime();
@@ -89,7 +92,7 @@ class TextAnalyzer {
         }
 
         // Stop timer
-        long endTime   = System.nanoTime();
+        long endTime = System.nanoTime();
         PARSE_TIME = (float)(endTime - startTime) / 1_000_000_000;
 
         return wordCounts;

@@ -12,6 +12,10 @@ import utility.Counter;
 // The value in the hashmap is that word's count.
 
 public class ParserThread extends Thread {
+
+    // Used for keeping track of thread number
+    private int threadNumber;
+
     private Counter counter;
     private List<String> words;
     private ConcurrentHashMap<String, AtomicInteger> wordCounts;
@@ -35,7 +39,8 @@ public class ParserThread extends Thread {
     private static final String letterRegex = "[A-z]";
     private static final Pattern letterPattern = Pattern.compile(letterRegex);
 
-    public ParserThread(Counter counter, List<String> words, ConcurrentHashMap<String, AtomicInteger> wordCounts){
+    public ParserThread(int threadNumber, Counter counter, List<String> words, ConcurrentHashMap<String, AtomicInteger> wordCounts){
+        this.threadNumber = threadNumber;
         this.counter = counter;
         this.words = words;
         this.wordCounts = wordCounts;
@@ -44,12 +49,16 @@ public class ParserThread extends Thread {
     @Override
     public void run() {
 
+        // // Printing threadNumber for testing
+        // System.out.println("STARTING ParserThread " + threadNumber);
+
         Matcher numMatch = null;
         Matcher wordMatch = null;
 
         String word = "";
         String parse = "";
         int num = counter.getAndIncrement();
+
         while (num < this.words.size()) {
 
             word = this.words.get(num);
@@ -60,6 +69,7 @@ public class ParserThread extends Thread {
                 wordMatch = wordPattern.matcher(word);
 
                 if (wordMatch.find()) {
+
                     parse = word.substring(wordMatch.start(), wordMatch.end());
                     parse = parse.toLowerCase();
 
@@ -75,6 +85,7 @@ public class ParserThread extends Thread {
 
                     this.wordCounts.putIfAbsent(parse, new AtomicInteger(0));
                     this.wordCounts.get(parse).incrementAndGet();
+
                 }
                 else {
                     // no letter and number match
@@ -85,5 +96,8 @@ public class ParserThread extends Thread {
 
             num = counter.getAndIncrement();
         }
+
+        // // Printing threadNumber for testing
+        // System.out.println("ENDING ParserThread(" + threadNumber + ").");
     }
 }
