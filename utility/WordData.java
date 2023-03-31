@@ -1,5 +1,4 @@
 package utility;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,47 +15,35 @@ import java.util.List;
 
 public class WordData {
 
-    // private static final int ARRAY_SIZE = 10;
-
-    // private int totalWordCount;
-    // private int onlyWordCount;
-    // private List<Word> words;
-    // private List<Word> mostCommonWords;
-
     public static final int ARRAY_SIZE = 10;
 
     public int totalWordCount;
     public int onlyWordCount;
     public List<Word> words;
     public List<Word> mostCommonWords; 
+    public List<Word> mostCommonUniqueWords;
     
-    public WordData() {
-        this.totalWordCount = 0;
-        this.onlyWordCount = 0;
-        this.words = new ArrayList<Word>();
-        this.mostCommonWords = new ArrayList<Word>();
-    }
-
-    public WordData(int totalWordCount, int onlyWordCount, List<Word> words, List<Word> mostCommonWords) {
+    public WordData(int totalWordCount, int onlyWordCount, List<Word> words, List<Word> mostCommonWords, List<Word> mostCommonUniqueWords) {
         this.totalWordCount = totalWordCount;
         this.onlyWordCount = onlyWordCount;
         this.words = words;
         this.mostCommonWords = mostCommonWords;
+        this.mostCommonUniqueWords = mostCommonUniqueWords;
     }
 
-    public synchronized void addToTotalCount(int amount) {
+    public void addToTotalCount(int amount) {
         this.totalWordCount += amount;
     }
 
-    public synchronized void incrementOnlyWordCount() {
+    public void incrementOnlyWordCount() {
         this.onlyWordCount++;
     }
 
-    public synchronized void addWord(Word word) {
+    public void addWord(Word word) {
         words.add(word);
     }
 
-    public synchronized void checkCommonWords(Word word) {
+    public void checkCommonWords(Word word) {
         // If the arrays aren't full, add the word to both of them
         if (this.mostCommonWords.size() < ARRAY_SIZE) {
             this.mostCommonWords.add(word);

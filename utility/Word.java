@@ -11,6 +11,20 @@ public class Word {
         this.count = count;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj.getClass() != this.getClass()) {
+            return false;
+        }
+
+        Word other = (Word)obj;
+
+        if (other.word.equals(this.word))
+            return true;
+
+        return false;
+    }
+
     // Comparers
     public static final Comparator<Word> ascending = new Comparator<Word>() {
         @Override

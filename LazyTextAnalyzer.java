@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,17 +98,58 @@ public class LazyTextAnalyzer {
         return wordCounts;
     }
 
-    public static WordData lazyAnalyze(List<Word> words) {
-
-        WordData data = new WordData();
+    public static WordData lazyAnalyze(List<Word> words) throws FileNotFoundException {
 
         long startTime = System.nanoTime();
         
+        int totalWordCount = 0;
+        int onlyWordCount = 0;
+        List<Word> mostCommonWords = new ArrayList<Word>();
+        List<Word> mostCommonUniqueWords = new ArrayList<Word>();
+
+        // Gets common english words
+        ConcurrentHashMap<String, AtomicInteger> commonEnglishWords = TextAnalyzer.readWords(TextAnalyzer.mostCommonWordsFile);
+
         for (Word word : words) {
-            data.addToTotalCount(word.count);
-            data.addWord(word);
-            data.checkCommonWords(word);
+            // Increment total count of words (addToTotalCount())
+            totalWordCount += word.count;
+
+            // Increment only word count (incrementOnlyWordCount())
+            if (word.count == 1)
+                onlyWordCount++;
+
+               // Check for common english words
+            if (commonEnglishWords.containsKey(word.word)) {
+                if (mostCommonWords.size() < WordData.ARRAY_SIZE) {
+                    mostCommonWords.add(word);
+                }
+                else {
+                    for (Word commonWord : mostCommonWords) {
+                        if (Word.descending.compare(word, commonWord) == -1) {
+                            mostCommonWords.set(mostCommonWords.indexOf(commonWord), word);
+                            break;
+                        }
+                    }   
+                }
+            }
+            else {
+                // Checks for common words that are not common in the English language
+                if (mostCommonUniqueWords.size() < WordData.ARRAY_SIZE) {
+                    mostCommonUniqueWords.add(word);
+                }
+                else {
+                    for (Word commonUniqueWord : mostCommonUniqueWords) {
+                        if (Word.descending.compare(word, commonUniqueWord) == -1) {
+                            mostCommonUniqueWords.set(mostCommonUniqueWords.indexOf(commonUniqueWord), word);
+                            break;
+                        }
+                    }   
+                }
+            }
         }
+
+        // Create word data constructor using analyzed information
+        WordData data = new WordData(totalWordCount, onlyWordCount, words, mostCommonWords, mostCommonUniqueWords);
 
         long endTime   = System.nanoTime();
         ANALYZE_TIME = (float)(endTime - startTime) / 1_000_000_000;
