@@ -11,6 +11,11 @@ public class Word {
         this.count = count;
     }
 
+    @Override 
+    public int hashCode() {
+        return word.hashCode();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj.getClass() != this.getClass()) {

@@ -104,11 +104,11 @@ public class LazyTextAnalyzer {
         
         int totalWordCount = 0;
         int onlyWordCount = 0;
-        List<Word> mostCommonWords = new ArrayList<Word>();
-        List<Word> mostCommonUniqueWords = new ArrayList<Word>();
+        ConcurrentHashMap<Word, AtomicInteger> mostCommonWords = new ConcurrentHashMap<Word, AtomicInteger>(16, 0.75f, TextAnalyzer.NUM_THREADS);;
+        ConcurrentHashMap<Word, AtomicInteger> mostCommonUniqueWords = new ConcurrentHashMap<Word, AtomicInteger>(16, 0.75f, TextAnalyzer.NUM_THREADS);;
 
         // Gets common english words
-        ConcurrentHashMap<String, AtomicInteger> commonEnglishWords = TextAnalyzer.readWords(TextAnalyzer.mostCommonWordsFile);
+        ConcurrentHashMap<Word, AtomicInteger> commonEnglishWords = TextAnalyzer.readWords(TextAnalyzer.mostCommonWordsFile);
 
         for (Word word : words) {
             // Increment total count of words (addToTotalCount())
@@ -118,29 +118,31 @@ public class LazyTextAnalyzer {
             if (word.count == 1)
                 onlyWordCount++;
 
-               // Check for common english words
-            if (commonEnglishWords.containsKey(word.word)) {
+            // Check for common english words
+            if (commonEnglishWords.containsKey(word)) {
                 if (mostCommonWords.size() < WordData.ARRAY_SIZE) {
-                    mostCommonWords.add(word);
+                    mostCommonWords.put(word, new AtomicInteger(0));
                 }
                 else {
-                    for (Word commonWord : mostCommonWords) {
+                    for (Word commonWord : mostCommonWords.keySet()) {
                         if (Word.descending.compare(word, commonWord) == -1) {
-                            mostCommonWords.set(mostCommonWords.indexOf(commonWord), word);
+                            mostCommonWords.remove(commonWord);
+                            mostCommonWords.put(word, new AtomicInteger(0));
                             break;
                         }
-                    }   
+                    }
                 }
             }
             else {
                 // Checks for common words that are not common in the English language
                 if (mostCommonUniqueWords.size() < WordData.ARRAY_SIZE) {
-                    mostCommonUniqueWords.add(word);
+                    mostCommonUniqueWords.put(word, new AtomicInteger(0));
                 }
                 else {
-                    for (Word commonUniqueWord : mostCommonUniqueWords) {
+                    for (Word commonUniqueWord : mostCommonUniqueWords.keySet()) {
                         if (Word.descending.compare(word, commonUniqueWord) == -1) {
-                            mostCommonUniqueWords.set(mostCommonUniqueWords.indexOf(commonUniqueWord), word);
+                            mostCommonUniqueWords.remove(commonUniqueWord);
+                            mostCommonUniqueWords.put(word, new AtomicInteger(0));
                             break;
                         }
                     }   

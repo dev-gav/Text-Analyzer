@@ -1,6 +1,9 @@
 package utility;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 // TODO Pull methods out of WordData and delegate the 
 // behavior to objects held by the AnalyzerThreads.
@@ -23,12 +26,21 @@ public class WordData {
     public List<Word> mostCommonWords; 
     public List<Word> mostCommonUniqueWords;
     
-    public WordData(int totalWordCount, int onlyWordCount, List<Word> words, List<Word> mostCommonWords, List<Word> mostCommonUniqueWords) {
+    public WordData(int totalWordCount, int onlyWordCount, List<Word> words, ConcurrentHashMap<Word, AtomicInteger> mostCommonWords, ConcurrentHashMap<Word, AtomicInteger> mostCommonUniqueWords) {
         this.totalWordCount = totalWordCount;
         this.onlyWordCount = onlyWordCount;
         this.words = words;
-        this.mostCommonWords = mostCommonWords;
-        this.mostCommonUniqueWords = mostCommonUniqueWords;
+
+        this.mostCommonWords = new ArrayList<Word>();
+        this.mostCommonUniqueWords = new ArrayList<Word>();
+        
+        for (Word w : mostCommonWords.keySet()) {
+            this.mostCommonWords.add(w);
+        }
+
+        for (Word w : mostCommonUniqueWords.keySet()) {
+            this.mostCommonUniqueWords.add(w);
+        }
     }
 
     public void addToTotalCount(int amount) {
@@ -75,6 +87,13 @@ public class WordData {
         output.append(ARRAY_SIZE + " most common words:\n");
         Collections.sort(this.mostCommonWords, Word.descending);
         for (Word word : this.mostCommonWords) {
+            output.append(word.word + " " + word.count + "\n");
+        }
+        output.append("\n");
+
+        output.append(ARRAY_SIZE + " most common unique words:\n");
+        Collections.sort(this.mostCommonUniqueWords, Word.descending);
+        for (Word word : this.mostCommonUniqueWords) {
             output.append(word.word + " " + word.count + "\n");
         }
         output.append("\n");

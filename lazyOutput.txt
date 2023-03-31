@@ -1,25 +1,37 @@
 File: text.txt
-Parse Runtime: 0.0374 seconds
-Analyze Runtime: 0.0046 seconds
-Total Runtime: 0.0420 seconds
+Parse Runtime: 0.0299 seconds
+Analyze Runtime: 0.0042 seconds
+Total Runtime: 0.0341 seconds
 
 Word Count: 9163
 Unique words: 1837
 Number of words with a count of one: 1081
 
-Combined total of the 10 most common words: 1466
-This is 0.16% of all 9163 words
+Combined total of the 10 most common words: 1401
+This is 0.15% of all 9163 words
 10 most common words:
 you 275
 the 259
-a 258
 to 191
 of 134
 this 121
+and 108
+what 99
 we 84
+on 70
 out 60
-they 46
-like 38
+
+10 most common unique words:
+i 239
+bee 88
+i'm 80
+bees 57
+honey 49
+right 44
+that's 41
+you're 40
+here 40
+oh 31
 
 
 
