@@ -1,40 +1,42 @@
 File: text.txt
-Parse Runtime: 0.0360 seconds
-Analyze Runtime: 0.0048 seconds
-Total Runtime: 0.0409 seconds
+Parse Runtime: 0.0557 seconds
+Analyze Runtime: 0.0103 seconds
+Total Runtime: 0.0660 seconds
 
 Word Count: 9163
 Unique words: 1837
 Number of words with a count of one: 1081
 
-Combined total of the 10 most common words: 1401
-This is 0.15% of all 9163 words
+Combined total of the 10 most common words: 1677
+This is 0.18% of all 9163 words
 10 most common words:
 you 275
 the 259
+i 239
 to 191
+it 167
 of 134
 this 121
 and 108
 what 99
 we 84
-on 70
-out 60
+
+10 most common custom words:
+bees 57
+barry 50
+honey 49
 
 10 most common unique words:
-i 239
 bee 88
-i'm 80
+it's 71
 bees 57
+barry 50
 honey 49
 right 44
 that's 41
 you're 40
 here 40
 we're 31
-oh 31
-can't 30
-where 27
 
 
 
@@ -489,8 +491,8 @@ looks 3
 girls 3
 scary 3
 hover 3
-power 3
 place 3
+power 3
 proud 3
 fault 3
 legs 3
@@ -667,16 +669,16 @@ cause 2
 times 2
 dying 2
 homes 2
-camps 2
 twice 2
+camps 2
 whose 2
 comes 2
 stage 2
 under 2
 legal 2
 creep 2
-stall 2
 sense 2
+stall 2
 blade 2
 waste 2
 ideas 2
@@ -1023,8 +1025,8 @@ magazine 1
 approach 1
 bringing 1
 shutting 1
-reminder 1
 question 1
+reminder 1
 babbling 1
 counting 1
 intended 1
@@ -1378,8 +1380,8 @@ though 1
 gordon 1
 pinned 1
 needed 1
-father 1
 knocks 1
+father 1
 nickel 1
 jury's 1
 employ 1
@@ -1810,8 +1812,8 @@ hivo 1
 cool 1
 date 1
 dash 1
-tuna 1
 dave 1
+tuna 1
 line 1
 flew 1
 god 1

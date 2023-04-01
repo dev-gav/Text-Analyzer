@@ -16,7 +16,7 @@ public class ParserThread extends Thread {
     // Used for keeping track of thread number
     private int threadNumber;
 
-    private Counter counter;
+    private AtomicInteger counter;
     private List<String> words;
     private ConcurrentHashMap<String, AtomicInteger> wordCounts;
 
@@ -39,7 +39,7 @@ public class ParserThread extends Thread {
     private static final String letterRegex = "[A-z]";
     private static final Pattern letterPattern = Pattern.compile(letterRegex);
 
-    public ParserThread(int threadNumber, Counter counter, List<String> words, ConcurrentHashMap<String, AtomicInteger> wordCounts){
+    public ParserThread(int threadNumber, AtomicInteger counter, List<String> words, ConcurrentHashMap<String, AtomicInteger> wordCounts){
         this.threadNumber = threadNumber;
         this.counter = counter;
         this.words = words;

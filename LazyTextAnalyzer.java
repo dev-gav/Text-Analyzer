@@ -110,6 +110,18 @@ public class LazyTextAnalyzer {
         // Gets common english words
         ConcurrentHashMap<Word, AtomicInteger> commonEnglishWords = TextAnalyzer.readWords(TextAnalyzer.mostCommonWordsFile);
 
+        // gets common custom words from list if user choses to analyze from list of custom words
+        ConcurrentHashMap<Word, AtomicInteger> mostCommonCustomWords;
+        ConcurrentHashMap<Word, AtomicInteger> commonCustomWords;
+        if (TextAnalyzer.customWordsFile.equalsIgnoreCase("")) {
+            mostCommonCustomWords = null;   
+            commonCustomWords = null;
+        }
+        else {
+            mostCommonCustomWords = new ConcurrentHashMap<Word, AtomicInteger>(16, 0.75f, TextAnalyzer.NUM_THREADS);
+            commonCustomWords = TextAnalyzer.readWords(TextAnalyzer.customWordsFile);
+        }
+
         for (Word word : words) {
             // Increment total count of words (addToTotalCount())
             totalWordCount += word.count;
@@ -148,10 +160,25 @@ public class LazyTextAnalyzer {
                     }   
                 }
             }
+
+            if ((commonCustomWords != null) && (commonCustomWords.containsKey(word))) {
+                if (mostCommonCustomWords.size() < WordData.ARRAY_SIZE) {
+                    mostCommonCustomWords.put(word, new AtomicInteger(0));
+                }
+                else {
+                    for (Word commonCustomWord : mostCommonCustomWords.keySet()) {
+                        if (Word.descending.compare(word, commonCustomWord) == -1) {
+                            mostCommonCustomWords.remove(commonCustomWord);
+                            mostCommonCustomWords.put(word, new AtomicInteger(0));
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         // Create word data constructor using analyzed information
-        WordData data = new WordData(totalWordCount, onlyWordCount, words, mostCommonWords, mostCommonUniqueWords);
+        WordData data = new WordData(totalWordCount, onlyWordCount, words, mostCommonWords, mostCommonCustomWords, mostCommonUniqueWords);
 
         long endTime   = System.nanoTime();
         ANALYZE_TIME = (float)(endTime - startTime) / 1_000_000_000;

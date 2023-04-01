@@ -11,19 +11,27 @@ public class AnalyzerThread extends Thread {
 
     private Counter counter;
     private ConcurrentHashMap<Word, AtomicInteger> commonEnglishWords;
+    private ConcurrentHashMap<Word, AtomicInteger> commonCustomWords;
+
     private List<Word> wordCounts;
     private AtomicInteger totalWordCount;
     private AtomicInteger onlyWordCount;
     private ConcurrentHashMap<Word, AtomicInteger> mostCommonWords;
+    private ConcurrentHashMap<Word, AtomicInteger> mostCommonCustomWords;
     private ConcurrentHashMap<Word, AtomicInteger> mostCommonUniqueWords;
 
-    public AnalyzerThread(Counter counter, ConcurrentHashMap<Word, AtomicInteger> commonEnglishWords, List<Word> wordCounts, AtomicInteger totalWordCount, AtomicInteger onlyWordCount, ConcurrentHashMap<Word, AtomicInteger> mostCommonWords,  ConcurrentHashMap<Word, AtomicInteger> mostCommonUniqueWords) {
+    public AnalyzerThread(Counter counter, ConcurrentHashMap<Word, AtomicInteger> commonEnglishWords, ConcurrentHashMap<Word, AtomicInteger> commonCustomWords, List<Word> wordCounts, AtomicInteger totalWordCount, AtomicInteger onlyWordCount,  ConcurrentHashMap<Word, AtomicInteger> mostCommonWords,  ConcurrentHashMap<Word, AtomicInteger> mostCommonCustomWords,  ConcurrentHashMap<Word, AtomicInteger> mostCommonUniqueWords) {
         this.counter = counter;
+
         this.commonEnglishWords = commonEnglishWords;
+        this.commonCustomWords = commonCustomWords;
+
         this.wordCounts = wordCounts;
         this.totalWordCount = totalWordCount;
         this.onlyWordCount =  onlyWordCount;
+
         this.mostCommonWords = mostCommonWords;
+        this.mostCommonCustomWords = mostCommonCustomWords;
         this.mostCommonUniqueWords = mostCommonUniqueWords;
     }
 
@@ -66,6 +74,22 @@ public class AnalyzerThread extends Thread {
                         if (Word.descending.compare(word, commonUniqueWord) == -1) {
                             this.mostCommonUniqueWords.remove(commonUniqueWord);
                             this.mostCommonUniqueWords.put(word, new AtomicInteger(0));
+                            break;
+                        }
+                    }   
+                }
+            }
+
+            if ((this.commonCustomWords != null) && (this.commonCustomWords.containsKey(word))) {
+                // Checks for common words that are common in the custom analyze list
+                if (this.mostCommonCustomWords.size() < WordData.ARRAY_SIZE) {
+                    this.mostCommonCustomWords.put(word, new AtomicInteger(0));
+                }
+                else {
+                    for (Word commonCustomWord : this.mostCommonCustomWords.keySet()) {
+                        if (Word.descending.compare(word, commonCustomWord) == -1) {
+                            this.mostCommonCustomWords.remove(commonCustomWord);
+                            this.mostCommonCustomWords.put(word, new AtomicInteger(0));
                             break;
                         }
                     }   
