@@ -65,7 +65,7 @@ public class AnalyzerThread extends Thread {
             if (this.commonEnglishWords.contains(word.getKey())) {
                 this.mostCommonWords.check(Map.entry(word.getKey(), word.getValue().get()));
             }
-            // Checks against other common words that are not common in the English language
+            // Checks against other common words that are not common in english
             else {
                 this.mostCommonUniqueWords.check(Map.entry(word.getKey(), word.getValue().get()));
             }

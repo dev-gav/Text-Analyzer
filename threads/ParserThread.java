@@ -81,11 +81,6 @@ public class ParserThread extends Thread {
                     this.wordCounts.get(parse).incrementAndGet();
 
                 }
-                else {
-                    // no letter and number match
-                    // all the junk goes here 
-                    // System.out.println("number: could not parse \'" + word + "\'");
-                }
             }
 
             num = counter.getAndIncrement();
