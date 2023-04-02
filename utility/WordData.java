@@ -1,20 +1,12 @@
 package utility;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-// TODO Pull methods out of WordData and delegate the 
-// behavior to objects held by the AnalyzerThreads.
-// If multiple threads are trying a single object
-// with multiple synchronized blocks, all blocks
-// must be free before the next thread can access.
-// So this implementation is most likely slow.
-
-// We probably instead just need to build everything in
-// AnalyzerThreads and just assign everything to WordData
-// in the constructor.
 
 public class WordData {
 
@@ -22,69 +14,48 @@ public class WordData {
 
     public int totalWordCount;
     public int onlyWordCount;
-    public List<Word> words;
-    public List<Word> mostCommonWords; 
-    public List<Word> mostCommonCustomWords; 
-    public List<Word> mostCommonUniqueWords;
+    public List<Entry<String, AtomicInteger>> wordCounts;
+    public List<Entry<String, Integer>> mostCommonWords; 
+    public List<Entry<String, Integer>> mostCommonUniqueWords;
+    public List<Entry<String, Integer>> customWordsData; 
     
-    public WordData(int totalWordCount, int onlyWordCount, List<Word> words, ConcurrentHashMap<Word, AtomicInteger> mostCommonWords, ConcurrentHashMap<Word, AtomicInteger> mostCommonCustomWords, ConcurrentHashMap<Word, AtomicInteger> mostCommonUniqueWords) {
+    public WordData(int totalWordCount, 
+                    int onlyWordCount, 
+                    List<Entry<String, AtomicInteger>> wordCounts, 
+                    HashSet<String> customWords,
+                    ConcurrentHashMap<String, Integer> customWordsData,
+                    CHMWrapper mostCommonWords,  
+                    CHMWrapper mostCommonUniqueWords) {
+
         this.totalWordCount = totalWordCount;
         this.onlyWordCount = onlyWordCount;
-        this.words = words;
+        this.wordCounts = wordCounts;
 
         // Creating array lists for word data
-        this.mostCommonWords = new ArrayList<Word>();
-
-        if(mostCommonCustomWords == null){
-            this.mostCommonCustomWords = null;
-        }
-        else {
-            this.mostCommonCustomWords = new ArrayList<Word>();
-        }
-
-        this.mostCommonUniqueWords = new ArrayList<Word>();
-        
-        // Setting array lists for word data
-        for (Word w : mostCommonWords.keySet()) {
+        this.mostCommonWords = new ArrayList<Entry<String, Integer>>();
+        for (Entry<String, Integer> w : mostCommonWords.entrySet()) {
             this.mostCommonWords.add(w);
         }
 
-        if (mostCommonCustomWords != null) {
-            for (Word w : mostCommonCustomWords.keySet()) {
-                this.mostCommonCustomWords.add(w);
-            }
-        }
-        
-        for (Word w : mostCommonUniqueWords.keySet()) {
+        this.mostCommonUniqueWords = new ArrayList<Entry<String, Integer>>();        
+        for (Entry<String, Integer> w : mostCommonUniqueWords.entrySet()) {
             this.mostCommonUniqueWords.add(w);
         }
-    }
 
-    public void addToTotalCount(int amount) {
-        this.totalWordCount += amount;
-    }
-
-    public void incrementOnlyWordCount() {
-        this.onlyWordCount++;
-    }
-
-    public void addWord(Word word) {
-        words.add(word);
-    }
-
-    public void checkCommonWords(Word word) {
-        // If the arrays aren't full, add the word to both of them
-        if (this.mostCommonWords.size() < ARRAY_SIZE) {
-            this.mostCommonWords.add(word);
+        if(customWords == null){
+            this.customWordsData = null;
+            return;
         }
-        else {
-            // Check most common words
-            for (Word commonWord : this.mostCommonWords) {
-                if (Word.descending.compare(word, commonWord) == -1) {
-                    this.mostCommonWords.set(this.mostCommonWords.indexOf(commonWord), word);
-                    return;
-                }
+
+        this.customWordsData = new ArrayList<Entry<String, Integer>>();
+        for (String customWord : customWords) {
+            if (!customWordsData.containsKey(customWord)) {
+                this.customWordsData.add(Map.entry(customWord, 0));
+                continue;
             }
+
+            Entry<String, Integer> wordWithCount = Map.entry(customWord, customWordsData.get(customWord));
+            this.customWordsData.add(wordWithCount);
         }
     }
 
@@ -93,52 +64,35 @@ public class WordData {
         StringBuilder output = new StringBuilder();
 
         output.append("Word Count: " + this.totalWordCount + "\n");
-        output.append("Unique words: " + this.words.size() + "\n");
+        output.append("Unique words: " + this.wordCounts.size() + "\n");
         output.append("Number of words with a count of one: " + this.onlyWordCount + "\n");
         output.append("\n");
 
-        Collections.sort(this.mostCommonWords, Word.descending);
+        if (this.customWordsData != null){
+            output.append("User searched terms:\n");
+            this.customWordsData.sort(descending);
+            for (Entry<String, Integer> word : this.customWordsData) {
+                output.append(word.getKey() + " " + word.getValue() + "\n");
+            }
+            output.append("\n");
+        }
+
+        this.mostCommonWords.sort(descending);
         int mostCommonTotal = calculateMostCommonTotal();
         output.append("Combined total of the " + ARRAY_SIZE + " most common words: " + mostCommonTotal + "\n");
         float top10wordsPercentage = (float)mostCommonTotal / (float)this.totalWordCount;
         output.append(String.format("This is %.2f%% of all %d words\n", top10wordsPercentage, this.totalWordCount)); // use '%%' to print '%'
         output.append(ARRAY_SIZE + " most common words:\n");
-        for (int i = 0; i < this.mostCommonWords.size(); i++) {
-            if (i == WordData.ARRAY_SIZE) {
-                break;
-            }
-
-            Word w = this.mostCommonWords.get(i);
-            output.append(w.word + " " + w.count + "\n");
+        for (Entry<String, Integer> word : this.mostCommonWords) {
+            output.append(word.getKey() + " " + word.getValue() + "\n");
         }
         output.append("\n");
-
-
-        if (this.mostCommonCustomWords != null){
-            output.append(ARRAY_SIZE + " most common custom words:\n");
-            Collections.sort(this.mostCommonCustomWords, Word.descending);
-            for (int i = 0; i < this.mostCommonCustomWords.size(); i++) {
-                if (i == WordData.ARRAY_SIZE) {
-                    break;
-                }
-
-                Word w = this.mostCommonCustomWords.get(i);
-                output.append(w.word + " " + w.count + "\n");
-            }
-            output.append("\n");
-        }
 
         output.append(ARRAY_SIZE + " most common unique words:\n");
-        Collections.sort(this.mostCommonUniqueWords, Word.descending);
-        for (int i = 0; i < this.mostCommonUniqueWords.size(); i++) {
-            if (i == WordData.ARRAY_SIZE) {
-                break;
-            }
-
-            Word w = this.mostCommonUniqueWords.get(i);
-            output.append(w.word + " " + w.count + "\n");
+        this.mostCommonUniqueWords.sort(descending);
+        for (Entry<String, Integer> word : this.mostCommonUniqueWords) {
+            output.append(word.getKey() + " " + word.getValue() + "\n");
         }
-        output.append("\n");
 
         if (debug)
             output.append(debug());
@@ -149,13 +103,8 @@ public class WordData {
     private int calculateMostCommonTotal() {
         int total = 0;
 
-        Collections.sort(this.mostCommonWords, Word.descending);
-        for (int i = 0; i < this.mostCommonWords.size(); i++) {
-            if (i == WordData.ARRAY_SIZE) {
-                break;
-            }
-            // System.out.println(i + " " + " total: " + total + " count: " + this.mostCommonWords.get(i).count);
-            total += this.mostCommonWords.get(i).count;
+        for (Entry<String, Integer> word : this.mostCommonWords) {
+            total += word.getValue();
         }
 
         return total;
@@ -166,12 +115,27 @@ public class WordData {
         StringBuilder debugStr = new StringBuilder();
         debugStr.append("\n\n(debug) all words:\n");
 
-        Collections.sort(this.words, Word.descending);
-        for (Word word : this.words) {
-            debugStr.append(word.word + " " + word.count + "\n");
+        this.wordCounts.sort(descendingAtomic);
+        for (Entry<String, AtomicInteger> word : this.wordCounts) {
+            debugStr.append(word.getKey() + " " + word.getValue() + "\n");
         }
-        debugStr.append("\n");
 
         return debugStr.toString();
     }
+
+    private Comparator<Entry<String, Integer>> descending = new Comparator<>() {
+        @Override
+        public int compare(Entry<String, Integer> o1, Entry<String, Integer> o2) {
+            int countCompare = o2.getValue() - o1.getValue();
+            return (countCompare != 0) ? countCompare : o2.getKey().compareTo(o1.getKey());
+        }
+    };
+
+    private Comparator<Entry<String, AtomicInteger>> descendingAtomic = new Comparator<>() {
+        @Override
+        public int compare(Entry<String, AtomicInteger> o1, Entry<String, AtomicInteger> o2) {
+            int countCompare = o2.getValue().get() - o1.getValue().get();
+            return (countCompare != 0) ? countCompare : o2.getKey().compareTo(o1.getKey());
+        }
+    };
 }

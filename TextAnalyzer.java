@@ -1,17 +1,24 @@
 // COP4520 Term Project
 import java.io.*;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import threads.AnalyzerThread;
 import threads.ParserThread;
+import utility.CHMWrapper;
 import utility.Counter;
-import utility.Word;
 import utility.WordData;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+
+// A WAY TO EXTEND THIS PROJECT
+// also parse the user input so that someone
+// could compare two input files
 
 // For an overview of what we are doing that's much easier to grasp,
 // check the LazyTextAnalyzer.java file for a single-threaded implementation
@@ -26,13 +33,12 @@ class TextAnalyzer {
     public static boolean endProgram = false;
 
     // prints out all words if true
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
-    // TODO maybe switch from using inputFile and NUM_THREADS to args[x] at some point?
-    public static String inputFile = "text.txt";
+    public static String inputFile = "";
     public static String customWordsFile = "";
     public static final String mostCommonWordsFile = "mostCommonWords.txt";
-    public static final int NUM_THREADS = 16;
+    public static final int NUM_THREADS = 8;
 
     private static float PARSE_TIME;
     private static float ANALYZE_TIME;
@@ -43,7 +49,6 @@ class TextAnalyzer {
         Scanner scanner = new Scanner(System.in);
         List<String> text = new ArrayList<String>();
 
-
         // keep asking for a text file to analyze while the input given in invalid
         do {
             System.out.println("What text would you like to analyze?");
@@ -53,7 +58,6 @@ class TextAnalyzer {
             try {
                 File file = new File(inputFile);
                 Scanner input = new Scanner(file); 
-                
 
                 while (input.hasNext())
                     text.add(input.next());
@@ -83,16 +87,10 @@ class TextAnalyzer {
         
         // Count number of times each word appears
         ConcurrentHashMap<String, AtomicInteger> wordCounts = countWords(text); 
-
-        // Turn hashmap into list of Word objects
-        // We could potentially parallelize this too
-        List<Word> words = new ArrayList<Word>();
-        for (String word : wordCounts.keySet()) {
-            words.add(new Word(word, wordCounts.get(word).get()));
-        }
-
-        WordData data = analyzeWords(words);
-
+        
+        // Get useful data from the word counts
+        WordData data = analyzeWords(wordCounts.entrySet());
+        
         outputToFile(data);
 
         // Run single-threaded version (prints to lazyOutput.txt)
@@ -105,13 +103,12 @@ class TextAnalyzer {
 
         // Create threads
         ParserThread parsers[] = new ParserThread[NUM_THREADS]; 
-        // Counter parserCounter = new Counter();
+        Counter parserCounter = new Counter();
 
-        AtomicInteger parserCounter = new AtomicInteger(0);
         ConcurrentHashMap<String, AtomicInteger> wordCounts = new ConcurrentHashMap<String, AtomicInteger>(16, 0.75f, NUM_THREADS);
         
         for(int i = 0; i < NUM_THREADS; i++)
-            parsers[i] = new ParserThread(i, parserCounter, words, wordCounts);
+            parsers[i] = new ParserThread(parserCounter, words, wordCounts);
 
         // Start timer 
         long startTime = System.nanoTime();
@@ -137,31 +134,33 @@ class TextAnalyzer {
 
     // Given a list of Words, update a WordData object
     // with valuable information about the Word list.
-    private static WordData analyzeWords(List<Word> words) throws FileNotFoundException {
+    private static WordData analyzeWords(Set<Entry<String, AtomicInteger>> wordCounts) throws FileNotFoundException {
         
+        List<Entry<String, AtomicInteger>> wordCountsList = new ArrayList<>();
+        wordCountsList.addAll(wordCounts);
+
         // Reads common English words and puts them in a hash map
-        ConcurrentHashMap<Word, AtomicInteger> mcwMap = readWords(mostCommonWordsFile); 
+        HashSet<String> mostCommonEnglishWords = readWords(mostCommonWordsFile); 
 
         // Reads custom words from list and puts them in a hash map
-        ConcurrentHashMap<Word, AtomicInteger> customWordsMap = null;
-        if(!customWordsFile.equalsIgnoreCase("")) {
-            customWordsMap = readWords(customWordsFile); 
+        HashSet<String> customWords = null;
+        ConcurrentHashMap<String, Integer> customWordsData = null;
+        if(!customWordsFile.isEmpty()) {
+            customWords = readWords(customWordsFile); 
+            customWordsData = new ConcurrentHashMap<String, Integer>(16, 0.75f, NUM_THREADS);
         }
+
+        AtomicInteger totalWordCount = new AtomicInteger(0);
+        AtomicInteger onlyWordCount = new AtomicInteger(0);
+        CHMWrapper mostCommonWords = new CHMWrapper(NUM_THREADS);
+        CHMWrapper mostCommonUniqueWords = new CHMWrapper(NUM_THREADS);
 
         // Create threads
         AnalyzerThread[] analyzers = new AnalyzerThread[NUM_THREADS];
         Counter analyzerCounter = new Counter();
 
-        // Creating variables to pass to analyzer threads
-        AtomicInteger totalWordCount = new AtomicInteger(0);
-        AtomicInteger onlyWordCount = new AtomicInteger(0);
-
-        ConcurrentHashMap<Word, AtomicInteger> mostCommonWords = new ConcurrentHashMap<Word, AtomicInteger>(16, 0.75f, NUM_THREADS);
-        ConcurrentHashMap<Word, AtomicInteger> mostCommonUniqueWords = new ConcurrentHashMap<Word, AtomicInteger>(16, 0.75f, NUM_THREADS);
-        ConcurrentHashMap<Word, AtomicInteger> mostCommonCustomWords = new ConcurrentHashMap<Word, AtomicInteger>(16, 0.75f, NUM_THREADS);
-
         for(int i = 0; i < NUM_THREADS; i++)
-            analyzers[i] = new AnalyzerThread(analyzerCounter, mcwMap, customWordsMap, words, totalWordCount, onlyWordCount, mostCommonWords, mostCommonCustomWords, mostCommonUniqueWords);
+            analyzers[i] = new AnalyzerThread(analyzerCounter, mostCommonEnglishWords, customWords, wordCountsList, totalWordCount, onlyWordCount, customWordsData, mostCommonWords, mostCommonUniqueWords);
             
         // Start timer
         long startTime = System.nanoTime();
@@ -182,26 +181,21 @@ class TextAnalyzer {
         long endTime   = System.nanoTime();
         ANALYZE_TIME = (float)(endTime - startTime) / 1_000_000_000;
 
-        if(customWordsFile.equalsIgnoreCase("")) {
-            mostCommonCustomWords= null;
-        }
-
-        return new WordData(totalWordCount.get(), onlyWordCount.get(), words, mostCommonWords, mostCommonCustomWords, mostCommonUniqueWords);
+        return new WordData(totalWordCount.get(), onlyWordCount.get(), wordCountsList, customWords, customWordsData, mostCommonWords, mostCommonUniqueWords);
     }
 
-    public static ConcurrentHashMap<Word, AtomicInteger> readWords(String filename) throws FileNotFoundException {
+    public static HashSet<String> readWords(String filename) throws FileNotFoundException {
         // Read in most common words
         File file = new File(filename);
         Scanner input = new Scanner(file); 
         
-        ConcurrentHashMap<Word, AtomicInteger> map = new ConcurrentHashMap<>(); 
+        HashSet<String> set = new HashSet<String>(); 
         while (input.hasNext()) {
-            map.put(new Word(input.next(), 0), new AtomicInteger(1));
+            set.add(input.next());
         }
         
         input.close();
-
-        return map;
+        return set;
     }
     
     private static void outputToFile(WordData data) {

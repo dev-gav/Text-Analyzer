@@ -4,12 +4,16 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import utility.Word;
+import utility.CHMWrapper;
 import utility.WordData;
 
 // This is the single threaded form of TextAnalyzer,
@@ -18,23 +22,13 @@ import utility.WordData;
 
 public class LazyTextAnalyzer {
 
-    public static final String inputFile = "text.txt";
-    public static final boolean DEBUG = true;
-
     private static float PARSE_TIME;
     private static float ANALYZE_TIME;
 
     public static void lazyMain(List<String> text) throws IOException {
 
         ConcurrentHashMap<String, AtomicInteger> wordCounts = LazyTextAnalyzer.lazyParse(text); 
-
-        List<Word> words = new ArrayList<Word>();
-        for (String word : wordCounts.keySet()) {
-            words.add(new Word(word, wordCounts.get(word).get()));
-        }
-        
-        WordData data = LazyTextAnalyzer.lazyAnalyze(words);
-
+        WordData data = LazyTextAnalyzer.lazyAnalyze(wordCounts.entrySet());
         LazyTextAnalyzer.lazyOutput(data);
     }
 
@@ -42,26 +36,28 @@ public class LazyTextAnalyzer {
         
         ConcurrentHashMap<String, AtomicInteger> wordCounts = new ConcurrentHashMap<String, AtomicInteger>();
 
-        // Match numbers https://regexr.com/796nj
-        // Click the settings icon in the top left and read
-        // description for clarification.
-        String numRegex = "\\d(((\\.|\\/)(?=\\d))|\\d)*";
-        Pattern numPattern = Pattern.compile(numRegex);
-        Matcher numMatch = null;
-
+        // Regices
         // Match words https://regexr.com/796mo
+        // Click the settings icon in the top left
+        // and read description for info.
         String wordRegex = "\\w((('|-)(?=\\w))|\\w)*";
         Pattern wordPattern = Pattern.compile(wordRegex);
         Matcher wordMatch = null;
+
+        // Match numbers https://regexr.com/796nj
+        String numRegex = "\\d(((\\.|\\/)(?=\\d))|\\d)*";
+        Pattern numPattern = Pattern.compile(numRegex);
+        Matcher numMatch = null;
 
         // Match any letter
         String letterRegex = "[A-z]";
         Pattern letterPattern = Pattern.compile(letterRegex);
 
-        long startTime = System.nanoTime();
-
         String parse = "";
+
+        long startTime = System.nanoTime();
         for (String word : words) {
+
             // If the string has any letters, try the word regex.
             // Otherwise, try the number regex.
             if (letterPattern.matcher(word).find()) {
@@ -98,90 +94,55 @@ public class LazyTextAnalyzer {
         return wordCounts;
     }
 
-    public static WordData lazyAnalyze(List<Word> words) throws FileNotFoundException {
-
-        long startTime = System.nanoTime();
+    public static WordData lazyAnalyze(Set<Entry<String, AtomicInteger>> wordCounts) throws FileNotFoundException {
         
+        List<Entry<String, AtomicInteger>> wordCountsList = new ArrayList<>();
+        wordCountsList.addAll(wordCounts);
+
+        // Reads common English words and puts them in a hash map
+        HashSet<String> mostCommonEnglishWords = TextAnalyzer.readWords(TextAnalyzer.mostCommonWordsFile); 
+
+        // Reads custom words from list and puts them in a hash map
+        HashSet<String> customWords = null;
+        ConcurrentHashMap<String, Integer> customWordsData = null;
+        if(!TextAnalyzer.customWordsFile.isEmpty()) {
+            customWords = TextAnalyzer.readWords(TextAnalyzer.customWordsFile); 
+            customWordsData = new ConcurrentHashMap<String, Integer>(16, 0.75f, TextAnalyzer.NUM_THREADS);
+        }
+
         int totalWordCount = 0;
         int onlyWordCount = 0;
-        ConcurrentHashMap<Word, AtomicInteger> mostCommonWords = new ConcurrentHashMap<Word, AtomicInteger>(16, 0.75f, TextAnalyzer.NUM_THREADS);;
-        ConcurrentHashMap<Word, AtomicInteger> mostCommonUniqueWords = new ConcurrentHashMap<Word, AtomicInteger>(16, 0.75f, TextAnalyzer.NUM_THREADS);;
+        CHMWrapper mostCommonWords = new CHMWrapper(TextAnalyzer.NUM_THREADS);
+        CHMWrapper mostCommonUniqueWords = new CHMWrapper(TextAnalyzer.NUM_THREADS);
 
-        // Gets common english words
-        ConcurrentHashMap<Word, AtomicInteger> commonEnglishWords = TextAnalyzer.readWords(TextAnalyzer.mostCommonWordsFile);
-
-        // gets common custom words from list if user choses to analyze from list of custom words
-        ConcurrentHashMap<Word, AtomicInteger> mostCommonCustomWords;
-        ConcurrentHashMap<Word, AtomicInteger> commonCustomWords;
-        if (TextAnalyzer.customWordsFile.equalsIgnoreCase("")) {
-            mostCommonCustomWords = null;   
-            commonCustomWords = null;
-        }
-        else {
-            mostCommonCustomWords = new ConcurrentHashMap<Word, AtomicInteger>(16, 0.75f, TextAnalyzer.NUM_THREADS);
-            commonCustomWords = TextAnalyzer.readWords(TextAnalyzer.customWordsFile);
-        }
-
-        for (Word word : words) {
+        long startTime = System.nanoTime();
+        for (Entry<String, AtomicInteger> word : wordCountsList) {
             // Increment total count of words (addToTotalCount())
-            totalWordCount += word.count;
+            totalWordCount += word.getValue().get();
 
             // Increment only word count (incrementOnlyWordCount())
-            if (word.count == 1)
+            if (word.getValue().get() == 1)
                 onlyWordCount++;
 
             // Check for common english words
-            if (commonEnglishWords.containsKey(word)) {
-                if (mostCommonWords.size() < WordData.ARRAY_SIZE) {
-                    mostCommonWords.put(word, new AtomicInteger(0));
-                }
-                else {
-                    for (Word commonWord : mostCommonWords.keySet()) {
-                        if (Word.descending.compare(word, commonWord) == -1) {
-                            mostCommonWords.remove(commonWord);
-                            mostCommonWords.put(word, new AtomicInteger(0));
-                            break;
-                        }
-                    }
-                }
+            if (mostCommonEnglishWords.contains(word.getKey())) {
+                mostCommonWords.check(Map.entry(word.getKey(), word.getValue().get()));
             }
+            // Checks for common words that are not common in the English language
             else {
-                // Checks for common words that are not common in the English language
-                if (mostCommonUniqueWords.size() < WordData.ARRAY_SIZE) {
-                    mostCommonUniqueWords.put(word, new AtomicInteger(0));
-                }
-                else {
-                    for (Word commonUniqueWord : mostCommonUniqueWords.keySet()) {
-                        if (Word.descending.compare(word, commonUniqueWord) == -1) {
-                            mostCommonUniqueWords.remove(commonUniqueWord);
-                            mostCommonUniqueWords.put(word, new AtomicInteger(0));
-                            break;
-                        }
-                    }   
-                }
+                mostCommonUniqueWords.check(Map.entry(word.getKey(), word.getValue().get()));
             }
 
-            if ((commonCustomWords != null) && (commonCustomWords.containsKey(word))) {
-                if (mostCommonCustomWords.size() < WordData.ARRAY_SIZE) {
-                    mostCommonCustomWords.put(word, new AtomicInteger(0));
-                }
-                else {
-                    for (Word commonCustomWord : mostCommonCustomWords.keySet()) {
-                        if (Word.descending.compare(word, commonCustomWord) == -1) {
-                            mostCommonCustomWords.remove(commonCustomWord);
-                            mostCommonCustomWords.put(word, new AtomicInteger(0));
-                            break;
-                        }
-                    }
-                }
+            if ((customWords != null) && (customWords.contains(word.getKey()))) {
+                customWordsData.put(word.getKey(), word.getValue().get()); 
             }
         }
 
-        // Create word data constructor using analyzed information
-        WordData data = new WordData(totalWordCount, onlyWordCount, words, mostCommonWords, mostCommonCustomWords, mostCommonUniqueWords);
-
         long endTime   = System.nanoTime();
         ANALYZE_TIME = (float)(endTime - startTime) / 1_000_000_000;
+
+        // Create word data constructor using analyzed information
+        WordData data = new WordData(totalWordCount, onlyWordCount, wordCountsList, customWords, customWordsData, mostCommonWords, mostCommonUniqueWords);
 
         return data;
     }
@@ -194,12 +155,12 @@ public class LazyTextAnalyzer {
 
         PrintWriter pw = new PrintWriter(out);
 
-        pw.printf("File: %s\n", inputFile);
+        pw.printf("File: %s\n", TextAnalyzer.inputFile);
         pw.printf("Parse Runtime: %.4f seconds\n", PARSE_TIME);
         pw.printf("Analyze Runtime: %.4f seconds\n", ANALYZE_TIME);
         pw.printf("Total Runtime: %.4f seconds\n", (PARSE_TIME + ANALYZE_TIME));
         pw.printf("\n");
-        pw.printf("%s", data.fileOutput(DEBUG));            
+        pw.printf("%s", data.fileOutput(TextAnalyzer.DEBUG));            
         pw.close();
     }  
 }

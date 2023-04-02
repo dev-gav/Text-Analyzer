@@ -1,4 +1,5 @@
 package threads;
+
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,10 +14,7 @@ import utility.Counter;
 
 public class ParserThread extends Thread {
 
-    // Used for keeping track of thread number
-    private int threadNumber;
-
-    private AtomicInteger counter;
+    private Counter counter;
     private List<String> words;
     private ConcurrentHashMap<String, AtomicInteger> wordCounts;
 
@@ -39,8 +37,7 @@ public class ParserThread extends Thread {
     private static final String letterRegex = "[A-z]";
     private static final Pattern letterPattern = Pattern.compile(letterRegex);
 
-    public ParserThread(int threadNumber, AtomicInteger counter, List<String> words, ConcurrentHashMap<String, AtomicInteger> wordCounts){
-        this.threadNumber = threadNumber;
+    public ParserThread(Counter counter, List<String> words, ConcurrentHashMap<String, AtomicInteger> wordCounts){
         this.counter = counter;
         this.words = words;
         this.wordCounts = wordCounts;
@@ -49,15 +46,12 @@ public class ParserThread extends Thread {
     @Override
     public void run() {
 
-        // // Printing threadNumber for testing
-        // System.out.println("STARTING ParserThread " + threadNumber);
-
         Matcher numMatch = null;
         Matcher wordMatch = null;
 
         String word = "";
         String parse = "";
-        int num = counter.getAndIncrement();
+        int num = this.counter.getAndIncrement();
 
         while (num < this.words.size()) {
 
@@ -96,8 +90,5 @@ public class ParserThread extends Thread {
 
             num = counter.getAndIncrement();
         }
-
-        // // Printing threadNumber for testing
-        // System.out.println("ENDING ParserThread(" + threadNumber + ").");
     }
 }
