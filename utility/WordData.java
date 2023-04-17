@@ -34,11 +34,17 @@ public class WordData {
         // Creating array lists for word data
         this.mostCommonWords = new ArrayList<Entry<String, Integer>>();
         for (Entry<String, Integer> w : mostCommonWords.entrySet()) {
+            if (w.getValue() == 0)
+                continue;
+
             this.mostCommonWords.add(w);
         }
 
         this.mostCommonUniqueWords = new ArrayList<Entry<String, Integer>>();        
         for (Entry<String, Integer> w : mostCommonUniqueWords.entrySet()) {
+            if (w.getValue() == 0)
+                continue;
+
             this.mostCommonUniqueWords.add(w);
         }
 
@@ -54,7 +60,11 @@ public class WordData {
                 continue;
             }
 
-            Entry<String, Integer> wordWithCount = Map.entry(customWord, customWordsData.get(customWord));
+            int count = customWordsData.get(customWord);
+            if (count == 0)
+                continue;
+
+            Entry<String, Integer> wordWithCount = Map.entry(customWord, count);
             this.customWordsData.add(wordWithCount);
         }
     }
@@ -80,7 +90,7 @@ public class WordData {
         this.mostCommonWords.sort(descending);
         int mostCommonTotal = calculateMostCommonTotal();
         output.append("Combined total of the " + ARRAY_SIZE + " most common words: " + mostCommonTotal + "\n");
-        float top10wordsPercentage = (float)mostCommonTotal / (float)this.totalWordCount;
+        float top10wordsPercentage = 100f * ((float)mostCommonTotal / (float)this.totalWordCount);
         output.append(String.format("This is %.2f%% of all %d words\n", top10wordsPercentage, this.totalWordCount)); // use '%%' to print '%'
         output.append(ARRAY_SIZE + " most common words:\n");
         for (Entry<String, Integer> word : this.mostCommonWords) {
